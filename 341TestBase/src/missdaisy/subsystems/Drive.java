@@ -119,4 +119,19 @@ public class Drive extends DaisySubsystem {
     	else
     		SmartDashboard.putString("DriveCurrentController", "OpenLoop");
     }
+
+	public void resetEncoders() {
+		mNavigation.resetEncoders();
+		
+	}
+
+	public double getAverageDistance() {
+		// Return the average distance traveled by the left and right encoders
+		return mNavigation.getAverageEncoderDistance();
+	}
+
+	public double getGyroAngle() {
+		// Return the NavX yaw heading in degrees
+		return mNavigation.getHeadingInDegrees();
+	}
 }

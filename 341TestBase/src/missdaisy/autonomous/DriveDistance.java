@@ -1,7 +1,9 @@
 package missdaisy.autonomous;
 
+import missdaisy.Constants;
 import missdaisy.loops.DriveDistanceController;
 import missdaisy.subsystems.Drive;
+import missdaisy.utilities.Trajectory;
 
 public class DriveDistance extends State {
 	private Drive mDrive;
@@ -18,7 +20,10 @@ public class DriveDistance extends State {
 	}
 
 	public void enter() {
-		mDriveController.setGoal(mDistance, mSpeed);
+		Trajectory mTrajectory = new Trajectory();
+		mTrajectory.generate(mDistance, mSpeed, Constants.driveMaximumAcceleration, Constants.driveMaximumJerk, Constants.defaultTrajectoryTimeStep);
+		
+		mDriveController.loadProfile(mTrajectory, 1.0, mDrive.getGyroAngle());
 		mDrive.setCurrentController(mDriveController);
 	}
 	

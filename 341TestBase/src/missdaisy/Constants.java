@@ -40,7 +40,7 @@ public final class Constants {
 	 * The distance the robot moves per shaft rotation.
 	 * Used to calculate the speed of the robot in the <code>Drive</code> class.
 	 */
-	public static final double driveDistancePerPulse = 2;
+	public static final double driveDistancePerPulse = (4*Math.PI)/255;
 	public static final long fastLoopTimerLoopLength = 5L;
 	public static final double kDriveAlpha = 0.05;
 	
@@ -51,4 +51,9 @@ public final class Constants {
 	public static final double kDefaultShooterRPMBatter = 4000;
 	public static final double kDefaultShooterRPMTolerance = 50;
 	public static final double kDefaultTurnPIDMaxMotorOutput = 0.3;
+	
+	public static final double driveMaximumVelocity = 10; // 10 ft/s
+	public static final double driveMaximumAcceleration = 1; // 1 ft/s^2
+	public static final double driveMaximumJerk = 0.1; // ft/s^3
+	public static final double defaultTrajectoryTimeStep = 0.05; // 20ms
 }

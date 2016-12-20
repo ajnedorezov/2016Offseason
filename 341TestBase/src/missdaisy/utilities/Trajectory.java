@@ -37,7 +37,7 @@ public class Trajectory
         return mInstance;
     }
     
-    private Trajectory()
+    public Trajectory()
     {
         mNumSegments = 0;
         mSegments = new Segment[500];

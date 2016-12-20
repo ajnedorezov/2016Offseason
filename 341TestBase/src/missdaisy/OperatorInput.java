@@ -1,15 +1,13 @@
 package missdaisy;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import missdaisy.loops.AutoAimDriveController;
-//import missdaisy.loops.AutoAimShooterController;
+import missdaisy.loops.DriveDistanceController;
 import missdaisy.loops.DriveStraightController;
 import missdaisy.loops.DriveTurnController;
 import missdaisy.loops.Navigation;
-//import missdaisy.loops.RevShooterController;
-//import missdaisy.loops.ShooterSpeedController;
 import missdaisy.subsystems.*;
 import missdaisy.utilities.DaisyMath;
+import missdaisy.utilities.Trajectory;
 import missdaisy.utilities.XboxController;
 
 public class OperatorInput {
@@ -17,14 +15,12 @@ public class OperatorInput {
 	protected XboxController mDriveController;
 	protected XboxController mOperatorController;
 	
+	protected DriveDistanceController mDriveDistance = new DriveDistanceController();
+	
 	// subsystems
 	private Drive mDrive;
-//	private Shooter mShooter;
-//	private Intake mIntake;
-//	private Hanger mHanger;
 	
 	// controllers
-	private AutoAimDriveController mAutoAimDrive;
 //	private AutoAimShooterController mAutoAimShooter;
 //	private ShooterSpeedController mShooterSpeed;
 	
@@ -52,12 +48,6 @@ public class OperatorInput {
 		mDriveController = new XboxController(Constants.driveControllerPort);
 		mOperatorController = new XboxController(Constants.operatorControllerPort);
 		mDrive = Drive.getInstance();
-//		mShooter = Shooter.getInstance();
-//		mIntake = Intake.getInstance();
-//		mHanger = Hanger.getInstance();
-		mAutoAimDrive = AutoAimDriveController.getInstance();
-//		mAutoAimShooter = AutoAimShooterController.getInstance();
-//		mShooterSpeed = ShooterSpeedController.getInstance();
 		SmartDashboard.putNumber("shootermotor", 0.0);
 	}
 	
@@ -73,13 +63,7 @@ public class OperatorInput {
 		//Checks if the auto aim is on target
 		// as long as the current controllers are the auto aim ones,
 		// and they are on target, set mReadyToShoot to true
-		/*
-		mIsAutoAimControllers = (mDrive.getCurrentController() == mAutoAimDrive) &&
-									(mShooter.getCurrentController() == mAutoAimShooter);
-		mIsAutoAimOnTarget = mAutoAimDrive.onTarget() && mAutoAimShooter.onTarget();
-		mReadyToShoot = mIsAutoAimControllers && mIsAutoAimOnTarget;
-		mShooter.setStatusLightState(mReadyToShoot);	
-		 */
+		
 		/**
 		 * Driver Inputs:
 		 * 1) Left and right sticks: moving robot
@@ -89,126 +73,43 @@ public class OperatorInput {
 		 * 
 		 */
 		if (mDrive.getCurrentController() == null) {
-			if (mDriveController.getRightTrigger())
+			if (mDriveController.getRightTrigger()){
 				mDrive.useAlphaFilter(false);
-			else 
+			}else{ 
 				mDrive.useAlphaFilter(true);
+			}
 			
-			if (!mArcadeDrive)
+			if (mDriveController.getAButton()){
+				Trajectory mTrajectory = new Trajectory();
+				mTrajectory.generate(mDrive.getAverageDistance()+500, Constants.driveMaximumVelocity, Constants.driveMaximumAcceleration, Constants.driveMaximumJerk, Constants.defaultTrajectoryTimeStep);
+				
+				mDriveDistance.loadProfile(mTrajectory, 1.0, mDrive.getGyroAngle());
+				mDrive.setCurrentController(mDriveDistance);
+			}else if (mDriveController.getYButton()){
+				Trajectory mTrajectory = new Trajectory();
+				mTrajectory.generate(mDrive.getAverageDistance()-200, Constants.driveMaximumVelocity, Constants.driveMaximumAcceleration, Constants.driveMaximumJerk, Constants.defaultTrajectoryTimeStep);
+				
+				mDriveDistance.loadProfile(mTrajectory, -1.0, mDrive.getGyroAngle());
+				mDrive.setCurrentController(mDriveDistance);
+				
+			}else if (!mArcadeDrive){
 				mDrive.setSpeed(mLeftMotorSpeed, mRightMotorSpeed);
-			else 
+			}else{ 
 				mDrive.setSpeedTurn(mSpeed, mTurn);
+			}
 		} else {
 			mDrive.useAlphaFilter(false);
-		}
-		
-		/**
-		 * Operator Inputs:
-		 * 1) RT: Shoot (if the auto-aim is on target)
-		 * 2) LT: Rev shooter (based on hood position)
-		 * 3) RB: Hood down (outerworks position)
-		 * 4) LB: Hood up (batter position)
-		 * 5) Right Stick: Intake in and out
-		 * 6) Left Stick: Hanger Winch
-		 * 7) A-Button: Intake to the floor (deploy)
-		 * 8) B-Button: Intake up (retract)
-		 * 9) X-Button: Extent hanger arms (deploy)
-		 * 10) Y-Button: Retract hanger arms (retract)
-		 */
-		/*
-		if (!mIntake.seesBall()) {
-			mIntake.setIntakeSpeed(mIntakeSpeed);
-			mIntake.setConveyorSpeed(mIntakeSpeed);
-		} else if (mIntake.seesBall() && mReadyToShoot) {
-			if (mOperatorController.getRightTrigger()) {
-				mIntake.setIntakeSpeed(1.0);
-				mIntake.setConveyorSpeed(1.0);
+			if(mDriveDistance.onTarget() || mDriveController.getBButton()){
+				mDrive.setCurrentController(null);
 			}
-		} else {
-			mIntake.setIntakeSpeed(0.0);
-			mIntake.setConveyorSpeed(0.0);
 		}
-		
-		// intake piston
-		if (mOperatorController.getAButton())
-			mIntake.deploy();
-		else if (mOperatorController.getBButton())
-			mIntake.retract();
-		
-		// shooter hood
-		if (mOperatorController.getLB())
-			mShooter.setBatterPosition();
-		else if (mOperatorController.getRB())
-			mShooter.setOuterworksPosition();
-		
-		// hanger piston
-		if (mOperatorController.getXButton())
-			mHanger.deploy();
-		else if (mOperatorController.getYButton())
-			mHanger.retract();
-		
-		// this is where all controller logic must go
-		// if none of the statements are satisfied, then subsystems
-		// will be an open loop
-		if (mDriveController.getLeftTrigger()) { // auto aim
-			mDrive.setCurrentController(mAutoAimDrive);
-			mShooter.setCurrentController(mAutoAimShooter);
-			mShooter.setVisionLightState(true);
-		} else if (mOperatorController.getLeftTrigger()) {
-			mShooter.setOpenLoop();
-			if (mShooter.isHoodOuterworksPosition()) {
-				mShooterSpeed.setGoal(Constants.kDefaultShooterRPMOuterWorks);
-			} else if (mShooter.isHoodBatterPosition()) {
-				mShooterSpeed.setGoal(Constants.kDefaultShooterRPMBatter);
-			}
-			mShooter.setCurrentController(mShooterSpeed);
-		} else {
-			mDrive.setOpenLoop(); 
-			mShooter.setOpenLoop();
-			mShooter.setSpeed(0.0);
-			mShooter.setVisionLightState(false);
-		}
-		
-		shootorRPMBlah = SmartDashboard.getNumber("shootermotor", 0.0);
-		*/
+	
 	}
 	
 	public void logToDashboard() {
 		SmartDashboard.putBoolean("ReadyToShoot", mReadyToShoot);
 		SmartDashboard.putBoolean("AutoAimOnTarget", mIsAutoAimOnTarget);
+		SmartDashboard.putString("DriveController", mDrive.getCurrentCommand().toString());
 		
 	}
 }
-
-/*
-if (!mIntake.seesBall()) {
-	mIntake.setIntakeSpeed(mIntakeSpeed);
-	mIntake.setConveyorSpeed(mIntakeSpeed);
-} else if (mIntake.seesBall() && mOperatorController.getRightTrigger()) {
-	mIntake.setIntakeSpeed(1.0);
-	mIntake.setConveyorSpeed(1.0);
-} else {
-	mIntake.setIntakeSpeed(0.0);
-	mIntake.setConveyorSpeed(0.0);
-} */
-
-
-/*
-if (mOperatorController.getRightTrigger()){ // temp speed control for shooter
-	ShooterSpeedController.getInstance().setGoal(shootorRPMBlah);
-	mShooter.setCurrentController(ShooterSpeedController.getInstance());
-} else {
-	mShooter.setOpenLoop();
-	mShooter.reset();
-} */
-
-/* Useful for telling the turn controller a certain angle to turn to
-if (mDriveController.getRB())
-	mDrive.setCurrentController(DriveTurnController.getInstance());
-else {
-	DriveTurnController.getInstance().reset();
-	DriveTurnController.getInstance().setGoal(
-			DaisyMath.boundAngle0to360Degrees(
-					Navigation.getInstance().getHeadingInDegrees() + 90));
-	mDrive.setOpenLoop();
-} */

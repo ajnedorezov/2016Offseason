@@ -1,5 +1,6 @@
 package missdaisy.utilities;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import missdaisy.utilities.Trajectory.Segment;
 
 /**
@@ -52,6 +53,16 @@ public class TrajectoryFollower
     {
         //System.out.println(mCurrentSegment + " " + mProfile.getNumSegments());
         mDistance = distance;
+        SmartDashboard.putNumber("Traj_distance", mDistance);
+        SmartDashboard.putNumber("CurrentSegment", mCurrentSegment);
+        SmartDashboard.putNumber("NumSegments", mProfile.getNumSegments());
+        SmartDashboard.putNumber("Traj_Kp", mKp);
+        SmartDashboard.putNumber("Traj_Ki", mKi);
+        SmartDashboard.putNumber("Traj_Kd", mKd);
+        SmartDashboard.putNumber("Traj_Kv", mKv);
+        SmartDashboard.putNumber("Traj_Ka", mKa);
+        SmartDashboard.putNumber("Traj_dt", mProfile.getDt());
+        
         if( mCurrentSegment < mProfile.getNumSegments() )
         {
             Segment segment = mProfile.getSegment(mCurrentSegment);
